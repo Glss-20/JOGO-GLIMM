@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class Player : MonoBehaviour
 {
@@ -15,11 +16,13 @@ public class Player : MonoBehaviour
     private Rigidbody2D rig;
     private Animator anim;
 
+    bool isBlowing;
+
 
     // Start is called before the first frame update
     void Start()
     {
-        rig = GetComponent<Rigidbody2D>();  
+        rig = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
     }
 
@@ -36,11 +39,11 @@ public class Player : MonoBehaviour
         Vector3 movement = new Vector3(Input.GetAxis("Horizontal"), 0f);
         transform.position += movement * Time.deltaTime * Speed;
 
-        if(Input.GetAxis("Horizontal") > 0f)
+        if (Input.GetAxis("Horizontal") > 0f)
         {
             anim.SetBool("walk", true);
             transform.localScale = new Vector3(1f, 1f, 1f);
-        } 
+        }
 
         if (Input.GetAxis("Horizontal") < 0f)
         {
@@ -53,13 +56,13 @@ public class Player : MonoBehaviour
             anim.SetBool("walk", false);
         }
     }
-        
+
 
     void Jump()
     {
-        if(Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && !isBlowing)
         {
-            if(!isJumping)
+            if (!isJumping)
             {
                 rig.AddForce(new Vector2(0f, JumpForce), ForceMode2D.Impulse);
                 doubleJump = true;
@@ -67,9 +70,9 @@ public class Player : MonoBehaviour
             }
             else
             {
-                if(doubleJump)
+                if (doubleJump)
                 {
-                  
+
                     rig.AddForce(new Vector2(0f, JumpForce * 1f), ForceMode2D.Impulse);
                     doubleJump = false;
                 }
@@ -79,13 +82,13 @@ public class Player : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.gameObject.layer == 8)
+        if (collision.gameObject.layer == 8)
         {
             isJumping = false;
             anim.SetBool("jump", false);
         }
 
-        if(collision.gameObject.tag == "Spike")
+        if (collision.gameObject.tag == "Spike")
         {
             GameController.instance.ShowGameOver();
             Destroy(gameObject);
@@ -99,10 +102,26 @@ public class Player : MonoBehaviour
     }
     void OnCollisionExit2D(Collision2D collision)
     {
-        if(collision.gameObject.layer == 8)
+        if (collision.gameObject.layer == 8)
         {
             isJumping = true;
         }
     }
 
+    void OnTriggerStay2D(Collider2D collider)
+    {
+        if (collider.gameObject.layer == 11)
+        {
+            isBlowing = true;
+        }
+    }
+
+    void OnTriggerExit2D(Collider2D collider)
+    {
+        if (collider.gameObject.layer == 11)
+        {
+            isBlowing = false;
+        }
+
+    }
 }
