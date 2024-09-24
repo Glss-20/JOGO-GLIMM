@@ -1,41 +1,39 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class Parallax : MonoBehaviour
 {
-
     private float length;
-    private float StarPos;
+    private float startPos;
 
     private Transform cam;
 
-    public float ParallaxEffect;
+    public float parallaxEffect;
 
     void Start()
     {
-        StarPos = transform.position.x;
+        startPos = transform.position.x;
         length = GetComponent<SpriteRenderer>().bounds.size.x;
         cam = Camera.main.transform;
     }
 
     void Update()
     {
-        float RePos = cam.transform.position.x * (1 - ParallaxEffect);
-        float Distance = cam.transform.position.x * ParallaxEffect;
+        float distance = cam.transform.position.x * parallaxEffect;
+        float newPos = startPos + distance;
 
-        transform.position = new Vector3(StarPos + Distance, transform.position.y, transform.position.z);
-        
-        if(RePos > StarPos + length)
-        {
-            StarPos += length;
-        }
-        else if(RePos < StarPos - length) 
-        {
-            StarPos -= length;
-        }
+        // Atualizar a posição do objeto
+        transform.position = new Vector3(newPos, transform.position.y, transform.position.z);
 
+        // Verificar se o objeto precisa ser reposicionado
+        if (cam.transform.position.x > startPos + length)
+        {
+            startPos += length;
+        }
+        else if (cam.transform.position.x < startPos - length)
+        {
+            startPos -= length;
+        }
     }
-
 }
