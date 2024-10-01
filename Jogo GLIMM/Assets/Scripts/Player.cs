@@ -1,95 +1,86 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.SceneManagement;
+
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
+    private float horizontal;
+    private float speed = 8f;
+    private float jumpingPower = 16f;
+    private bool isFacingRight = true;
 
-    public float Speed;
-    public float JumpForce;
+    private Collider2D platformCollider;
 
-    public bool isJumping;
-    public bool doubleJump;
-
-    private Rigidbody2D rig;
-    private Animator anim;
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        rig = GetComponent<Rigidbody2D>();  
-        anim = GetComponent<Animator>();
-    }
-
-    // Update is called once per frame
+    [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Animator anim;
     void Update()
     {
-        Move();
-        Jump();
+        horizontal = Input.GetAxisRaw("Horizontal");
+
+        if (Input.GetButtonDown("Jump") && IsGrounded())
+        {
+            rb.velocity = new Vector2(rb.velocity.x, jumpingPower);
+        }
+
+        if (Input.GetButtonUp("Jump") && rb.velocity.y > 0f)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
+        }
+        Animations();
+        Flip();
     }
 
-
-    void Move()
+    private void FixedUpdate()
     {
-        Vector3 movement = new Vector3(Input.GetAxis("Horizontal"), 0f);
-        transform.position += movement * Time.deltaTime * Speed;
+        rb.velocity = new Vector2(horizontal * speed, rb.velocity.y);
+    }
 
-        if(Input.GetAxis("Horizontal") > 0f)
-        {
-            anim.SetBool("walk", true);
-            transform.localScale = new Vector3(1f, 1f, 1f);
-        } 
+    private bool IsGrounded()
+    {
+        return Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);
+    }
 
-        if (Input.GetAxis("Horizontal") < 0f)
+    private void Flip()
+    {
+        if (isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
         {
-            anim.SetBool("walk", true);
-            transform.localScale = new Vector3(-1f, 1f, 1f);
-        }
-
-        if (Input.GetAxis("Horizontal") == 0f)
-        {
-            anim.SetBool("walk", false);
+            isFacingRight = !isFacingRight;
+            Vector3 localScale = transform.localScale;
+            localScale.x *= -1f;
+            transform.localScale = localScale;
         }
     }
+    public void Animations()
+    {
+        if(horizontal != 0  && IsGrounded())
+        {
+            anim.SetInteger("Player", 1);
+        }
+        if (horizontal == 0 && IsGrounded())
+        {
+            anim.SetInteger("Player", 0);
+        }
+        if (!IsGrounded())
+        {
+            anim.SetInteger("Player", 2);
+        }
+    }
+
         
+void OnCollisionEnter2D(Collision2D collision)
+    {
 
-    void Jump()
-    {
-        if(Input.GetButtonDown("Jump"))
+        if (collision.gameObject.tag == "Spike")
         {
-            if(!isJumping)
-            {
-                rig.AddForce(new Vector2(0f, JumpForce), ForceMode2D.Impulse);
-                doubleJump = true;
-                anim.SetBool("jump", true);
-            }
-            else
-            {
-                if(doubleJump)
-                {
-                  
-                    rig.AddForce(new Vector2(0f, JumpForce * 1f), ForceMode2D.Impulse);
-                    doubleJump = false;
-                }
-            }
+            GameController.instance.ShowGameOver();
+            Destroy(gameObject);
         }
-    }
 
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if(collision.gameObject.layer == 8)
+        if (collision.gameObject.tag == "Saw")
         {
-            isJumping = false;
-            anim.SetBool("jump", false);
-        }
-    }
-    void OnCollisionExit2D(Collision2D collision)
-    {
-        if(collision.gameObject.layer == 8)
-        {
-            isJumping = true;
+            GameController.instance.ShowGameOver();
+            Destroy(gameObject);
         }
     }
 
